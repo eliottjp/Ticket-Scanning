@@ -1,148 +1,214 @@
-/* General Styling */
+/* 🔹 General Styling */
 body {
   text-align: center;
-  font-family: Arial, sans-serif;
-  background-color: #f0f0f0;
+  font-family: "Arial", sans-serif;
+  background-color: #f7f7f7;
   transition: background-color 0.3s ease-in-out;
+  padding-bottom: 150px; /* Ensures no overlap */
+  color: #333;
 }
 
+/* 🔹 Header */
 h2 {
   margin-top: 20px;
+  font-size: 1.8rem;
+  color: #6a0dad;
+  font-weight: bold;
 }
 
+/* 🔹 Input Field */
 input {
   width: 80%;
+  max-width: 400px;
   font-size: 1.5rem;
-  padding: 10px;
+  padding: 12px;
   margin-top: 20px;
   text-align: center;
   display: block;
   margin: 20px auto;
+  border: 2px solid #6a0dad;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.3s ease-in-out;
 }
 
-p {
-  font-size: 1.2rem;
+input:focus {
+  border-color: #4b0082;
+  box-shadow: 0 0 10px rgba(106, 13, 173, 0.3);
+}
+
+/* 🔹 Scan Status */
+.scan-status {
+  font-size: 1.3rem;
   font-weight: bold;
-  margin-top: 10px;
+  margin-top: 15px;
+  padding: 10px;
 }
 
-/* Flash Background Colors */
+/* 🟢 Flash Background Effects */
 .flash-green {
   background-color: #4caf50 !important; /* Green */
-  transition: background-color 0.5s ease;
+  transition: background-color 0.5s ease-in-out;
 }
 
 .flash-red {
   background-color: #ff4c4c !important; /* Red */
-  transition: background-color 0.5s ease;
+  transition: background-color 0.5s ease-in-out;
 }
 
 .flash-gold {
   background-color: #ffd700 !important; /* Gold */
-  transition: background-color 0.5s ease;
+  transition: background-color 0.5s ease-in-out;
 }
 
-#markCheckedInButton {
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #6a0dad;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  display: none;
-}
-
-#markCheckedInButton:hover {
-  background-color: #5a0ca8;
-}
-
-.ticket-details-container {
-  width: 100%;
+/* 🔹 Ticket Details */
+.ticket-details {
+  width: 90%;
   max-width: 600px;
   margin: 20px auto;
   padding: 20px;
   background-color: white;
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: left;
+  border-left: 5px solid #6a0dad;
 }
 
-.search-results {
-  border: 1px solid #ddd;
-  max-height: 200px;
-  overflow-y: auto;
+.ticket-details p {
+  font-size: 1.2rem;
+  margin: 5px 0;
 }
 
-.search-result-item {
-  padding: 8px;
-  cursor: pointer;
+.ticket-details p span {
+  font-weight: bold;
+  color: #6a0dad;
 }
 
-.search-result-item:hover {
-  background-color: #f0f0f0;
-}
-
-/* Admin Panel Styles */
-.admin-container {
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
+/* 🟣 Progress Card - Modern Look */
+.progress-card {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 400px;
+  background: white;
   padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.admin-header {
-  font-size: 24px;
+  border-radius: 15px 15px 0 0;
+  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.15);
   text-align: center;
-  margin-bottom: 20px;
+  z-index: 10; /* Lower than scan history */
 }
 
-.search-section {
+/* 🔹 Progress Content */
+.progress-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 20px;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: 15px;
 }
 
-.search-input {
-  width: 70%;
-  padding: 10px;
-  font-size: 14px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+/* 🔹 Left & Right Numbers */
+.progress-number {
+  font-size: 2rem; /* Large numbers */
+  font-weight: bold;
+  color: #6a0dad;
 }
 
-.search-button {
-  width: 25%;
-  padding: 10px;
-  background-color: #6a0dad;
+.progress-label {
+  font-size: 1rem; /* Smaller label text */
+  color: #333;
+}
+
+/* 🟣 Progress Circle - Positioned in Center */
+.progress-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+}
+
+/* Circular Progress Bar */
+.progress-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: conic-gradient(#6a0dad 0% 0%, #ddd 0%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+  transition: background 0.5s ease-in-out;
+}
+
+/* White Inner Circle */
+.progress-circle::before {
+  content: "";
+  width: 90px;
+  height: 90px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  z-index: 1;
+}
+
+/* Progress Percentage Inside Circle */
+.progress-text {
+  position: relative;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #6a0dad;
+  z-index: 2;
+}
+
+.scan-history-card {
+  position: fixed;
+  bottom: 140px; /* Move it higher to avoid overlap */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 400px;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  font-size: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100; /* Ensure it stays on top */
+}
+
+/* List Styling */
+.scan-history-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.scan-history-card li {
+  padding: 6px 10px;
+  margin: 4px 0;
+  font-weight: bold;
+  border-radius: 6px;
+}
+
+/* ✅ Green for Valid Scans */
+.scan-history-valid {
+  background-color: #4caf50;
   color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
 }
 
-.search-button:hover {
-  background-color: #520d8a;
+/* ⭐ Gold for VIP */
+.scan-history-vip {
+  background-color: #ffd700;
+  color: black;
 }
 
-.ticket-details {
-  margin-bottom: 20px;
-}
-
-.checked-in-button {
-  width: 100%;
-  padding: 10px;
-  background-color: green;
+/* ❌ Red for Invalid */
+.scan-history-invalid {
+  background-color: #ff4c4c;
   color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.checked-in-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
 }

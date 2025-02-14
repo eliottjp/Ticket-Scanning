@@ -4,6 +4,7 @@ import {
   collection,
   doc,
   setDoc,
+  updateDoc,
 } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 
 // 🔹 Firebase Config
@@ -20,7 +21,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🔹 Handle Upload Button Click
 document
   .getElementById("uploadBtn")
   .addEventListener("click", async function () {
@@ -28,12 +28,8 @@ document
     const eventName = document.getElementById("eventName").value.trim();
     const eventDate = document.getElementById("eventDate").value.trim();
 
-    if (!fileInput.files.length) {
-      alert("Please select a file.");
-      return;
-    }
-    if (!eventName || !eventDate) {
-      alert("Please enter both event name and date.");
+    if (!fileInput.files.length || !eventName || !eventDate) {
+      alert("Please select a file and enter event details.");
       return;
     }
 
@@ -49,14 +45,15 @@ document
         return;
       }
 
-      // 🔹 Create a simple event ID
+      // 🔹 Create a unique event ID
       let eventID = `${eventName.replace(/\s+/g, "_")}_${eventDate}`;
       console.log(`📂 Event ID: ${eventID}`);
 
-      // 🔹 Store event ID in localStorage for scanner.js to use
-      localStorage.setItem("eventID", eventID);
+      // 🔹 Store event ID globally in Firestore
+      const globalRef = doc(db, "GlobalSettings", "CurrentEvent");
+      await setDoc(globalRef, { eventID });
 
-      // 🔹 Skip the first 3 rows
+      // 🔹 Skip the first 3 rows of headers
       rows.splice(0, 3);
 
       let batchPromises = [];
