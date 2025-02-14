@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Upload Tickets</title>
+        <script type="module" src="js/upload.js"></script>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <h2>Upload Event List</h2>
+
+        <label for="eventName">Event Name:</label>
+        <input type="text" id="eventName" placeholder="Enter event name"
+            required>
+
+        <label for="eventDate">Event Date:</label>
+        <input type="date" id="eventDate" required>
+
+        <input type="file" id="fileInput">
+        <button id="uploadBtn">Upload</button>
+
+        <p id="statusMessage"></p>
+
+    </body>
+</html>

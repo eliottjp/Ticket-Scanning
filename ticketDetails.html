@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Ticket Details</title>
+        <script type="module" src="js/ticketdetails.js"></script>
+        <link rel="stylesheet" href="assets/styles.css" />
+    </head>
+    <body>
+        <div class="container">
+            <h1>Search Ticket Details</h1>
+            <div class="search-container">
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Enter name or confirmation number" />
+                <button id="searchButton">Search</button>
+            </div>
+
+            <ul id="resultsList"
+                style="display: none; list-style-type: none; padding: 0;"></ul>
+
+            <div id="ticketDetails" class="ticket-details"
+                style="display: none;">
+                <p id="ticketName">Name: </p>
+                <p id="ticketSeat">Seat: </p>
+                <p id="ticketRow">Row: </p>
+                <p id="ticketVIP">VIP: </p>
+                <p id="ticketCheckedIn">Checked In: </p>
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Scanner</title>
+        <script type="module" src="js/scanner.js"></script>
+        <link rel="stylesheet" href="assets/styles.css">
+    </head>
+    <body>
+        <div class="scanner-container">
+            <h2 class="scanner-header">Scan Ticket</h2>
+            <input type="text" id="barcodeInput" class="scanner-input"
+                placeholder="Scan barcode here..." autofocus>
+            <div id="scanStatus" class="scan-status"></div>
+
+            <div id="ticketDetails" class="ticket-details">
+                <p id="ticketName">Name: </p>
+                <p id="ticketSeat">Seat Number: </p>
+                <p id="ticketRow">Row: </p>
+                <p id="ticketVIP">VIP: </p>
+            </div>
+        </div>
+    </body>
+</html>

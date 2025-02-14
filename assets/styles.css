@@ -1,0 +1,83 @@
+/* General Styling */
+body {
+  text-align: center;
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+  transition: background-color 0.3s ease-in-out;
+}
+
+h2 {
+  margin-top: 20px;
+}
+
+input {
+  width: 80%;
+  font-size: 1.5rem;
+  padding: 10px;
+  margin-top: 20px;
+  text-align: center;
+  display: block;
+  margin: 20px auto;
+}
+
+p {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+/* Flash Background Colors */
+.flash-green {
+  background-color: #4caf50 !important; /* Green */
+  transition: background-color 0.5s ease;
+}
+
+.flash-red {
+  background-color: #ff4c4c !important; /* Red */
+  transition: background-color 0.5s ease;
+}
+
+.flash-gold {
+  background-color: #ffd700 !important; /* Gold */
+  transition: background-color 0.5s ease;
+}
+
+#markCheckedInButton {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #6a0dad;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: none;
+}
+
+#markCheckedInButton:hover {
+  background-color: #5a0ca8;
+}
+
+.ticket-details-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-results {
+  border: 1px solid #ddd;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.search-result-item {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.search-result-item:hover {
+  background-color: #f0f0f0;
+}
