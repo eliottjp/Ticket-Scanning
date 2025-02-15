@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Admin Dashboard</title>
+        <script type="module" src="js/admin.js"></script>
+        <link rel="stylesheet" href="assets/admin.css">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    <body>
+        <div class="admin-container">
+            <!-- Header Section -->
+            <h2>🎟️ Event Management</h2>
+
+            <!-- Ticket Statistics -->
+            <div class="stats-header">
+                <h3>Ticket Statistics</h3>
+                <div class="stats">
+                    <span>Scanned: <strong
+                            id="scannedCount">0</strong></span>
+                    <span>Remaining: <strong
+                            id="remainingCount">0</strong></span>
+                    <button id="resetButton">Reset Scanned Tickets</button>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="chart-container">
+                <h3>📊 Ticket Scans Per Hour</h3>
+                <canvas id="scanChart"></canvas>
+            </div>
+
+            <!-- CSV Upload Section -->
+            <div class="upload-container">
+                <h3>📂 Upload Event List</h3>
+                <label for="eventName">Event Name:</label>
+                <input type="text" id="eventName" placeholder="Enter event name"
+                    required>
+
+                <label for="eventDate">Event Date:</label>
+                <input type="date" id="eventDate" required>
+
+                <input type="file" id="fileInput">
+                <button id="uploadBtn">Upload</button>
+
+                <p id="statusMessage"></p>
+            </div>
+        </div>
+    </body>
+</html>

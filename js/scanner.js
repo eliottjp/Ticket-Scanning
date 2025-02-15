@@ -300,7 +300,10 @@ document
                   "scan-history-invalid"
                 );
               } else {
-                await updateDoc(ticketRef, { checkedIn: true });
+                await updateDoc(ticketRef, {
+                  checkedIn: true,
+                  timestamp: new Date().toISOString(), // ✅ Save scan timestamp
+                });
 
                 let message = `✅ ${ticketData.name}`;
                 let color = "green";
@@ -325,7 +328,10 @@ document
                   "scan-history-invalid"
                 );
               } else {
-                await updateDoc(ticketRef, { checkedIn: false });
+                await updateDoc(ticketRef, {
+                  checkedIn: false,
+                  timestamp: null, // ✅ Remove timestamp when checking out
+                });
                 showFeedback(
                   `🔄 ${ticketData.name} Checked Out`,
                   "blue",
