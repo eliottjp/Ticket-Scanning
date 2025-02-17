@@ -33,6 +33,10 @@ input {
   transition: all 0.3s ease-in-out;
 }
 
+.no-keyboard {
+  pointer-events: none;
+}
+
 input:focus {
   border-color: #4b0082;
   box-shadow: 0 0 10px rgba(106, 13, 173, 0.3);
