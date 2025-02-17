@@ -34,6 +34,25 @@ async function fetchEventID() {
   if (docSnap.exists()) {
     eventID = docSnap.data().eventID;
     console.log(`📂 Active Event ID: ${eventID}`);
+
+    // 🛠️ Split eventID to extract name and date
+    const parts = eventID.split("_");
+    if (parts.length < 3) {
+      console.warn("⚠️ Unexpected eventID format!");
+      return;
+    }
+
+    const eventDate = parts.pop(); // Last part is the date
+    const eventName = parts.join(" "); // Remaining parts are the name
+
+    console.log(`📅 Event Name: ${eventName}`);
+    console.log(`📆 Event Date: ${eventDate}`);
+
+    // Update UI
+    const eventElement = document.getElementById("currentEvent");
+    if (eventElement) {
+      eventElement.innerHTML = `<strong>📅 ${eventName} | ${eventDate}</strong>`;
+    }
   } else {
     console.warn("⚠️ No active event found!");
   }
