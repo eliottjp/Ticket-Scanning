@@ -1,14 +1,16 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import {
   getFirestore,
   collection,
   getDocs,
   getDoc,
   doc,
+  setDoc,
   query,
   where,
   updateDoc,
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+import { writeBatch } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 
 // 🔹 Firebase Config
 const firebaseConfig = {
@@ -157,3 +159,126 @@ document.getElementById("resetButton").addEventListener("click", async () => {
   updateTicketCounts();
   loadScanChartData();
 });
+
+// 🔹 CSV File Upload & Store in Firestore
+// 🔹 CSV File Upload & Store in Firestore
+document
+  .getElementById("uploadBtn")
+  .addEventListener("click", async function () {
+    const fileInput = document.getElementById("fileInput");
+    const eventName = document.getElementById("eventName").value.trim();
+    const eventDate = document.getElementById("eventDate").value.trim();
+
+    if (!fileInput.files.length || !eventName || !eventDate) {
+      alert("Please select a file and enter event details.");
+      return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async function (e) {
+      const csvData = e.target.result;
+      let rows = csvData.split("\n").map((row) => row.split(","));
+
+      if (rows.length < 4) {
+        console.error("⚠️ CSV file is missing required columns.");
+        return;
+      }
+
+      // 🔹 Create a unique event ID
+      let eventID = `${eventName.replace(/\s+/g, "_")}_${eventDate}`;
+      console.log(`📂 Event ID: ${eventID}`);
+
+      // 🔹 Store event ID globally in Firestore
+      const globalRef = doc(db, "GlobalSettings", "CurrentEvent");
+      await setDoc(globalRef, { eventID }).catch((error) =>
+        console.error("❌ Error saving event ID:", error)
+      );
+
+      // 🔹 Skip the first 3 rows of headers
+      rows.splice(0, 3);
+      console.log(`🔍 Total rows after removing headers: ${rows.length}`);
+
+      let batchSize = 500; // Firestore batch limit
+      let batchPromises = [];
+      let uniqueIDs = new Set();
+      let totalUploaded = 0;
+
+      // 🔹 Process CSV Rows
+      let batch = writeBatch(db);
+      let i = 0;
+
+      for (let row of rows) {
+        console.log("🔍 Row Data:", row);
+        console.log("🔢 Row Length:", row.length);
+
+        if (row.length < 12) {
+          console.warn(
+            `⚠️ Skipped row due to insufficient columns (${row.length}):`,
+            row
+          );
+          continue;
+        }
+
+        let ticketID = row[0]?.replace(/['"]/g, "").trim(); // 🔹 Use ID from the 1st column
+        let name = row[3]?.replace(/['"]/g, "").trim() || "Unknown";
+        let barcode = row[2]?.replace(/['"]/g, "").trim() || "";
+        let confirmation = row[8]?.replace(/['"]/g, "").trim() || "";
+        let rowNumber = row[10]?.replace(/['"]/g, "").trim() || "";
+        let seatNumber = row[11]?.replace(/['"]/g, "").trim() || "";
+        let isVIP = row[5]?.toLowerCase().includes("vip") ? "Yes" : "No";
+
+        if (!ticketID) {
+          console.warn("⚠️ Skipped row due to missing ticket ID:", row);
+          continue;
+        }
+
+        if (uniqueIDs.has(ticketID)) {
+          console.warn(`⚠️ Duplicate Ticket ID found: ${ticketID}, skipping.`);
+          continue;
+        } else {
+          uniqueIDs.add(ticketID);
+        }
+
+        let ticketData = {
+          name,
+          barcode,
+          confirmation,
+          rowNumber,
+          seatNumber,
+          vipGuest: isVIP,
+          checkedIn: false,
+        };
+
+        console.log("✅ Added ticket:", ticketData);
+        let ticketRef = doc(collection(db, eventID), ticketID);
+        batch.set(ticketRef, ticketData);
+        totalUploaded++;
+
+        // 🔹 Commit batch if limit is reached
+        if (++i % batchSize === 0) {
+          batchPromises.push(batch.commit());
+          batch = writeBatch(db);
+        }
+      }
+
+      // 🔹 Upload remaining batch
+      if (i % batchSize !== 0) {
+        batchPromises.push(batch.commit());
+      }
+
+      // 🔹 Upload all batches
+      try {
+        await Promise.all(batchPromises);
+        alert("✅ Upload successful!");
+        fetchEventID();
+        console.log(`✅ Successfully uploaded ${totalUploaded} tickets.`);
+      } catch (error) {
+        console.error("❌ Error uploading file:", error);
+        alert("❌ Error uploading file.");
+      }
+    };
+
+    reader.readAsText(file);
+  });

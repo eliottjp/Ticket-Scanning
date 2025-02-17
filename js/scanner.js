@@ -33,23 +33,45 @@ const soundVIP = new Audio("sounds/vip.mp3");
 let eventID = null;
 let debounceTimeout;
 
-// 🔹 Fetch latest eventID from Firestore
+// 🔹 Fetch latest event details from Firestore
 async function fetchEventID() {
   const globalRef = doc(db, "GlobalSettings", "CurrentEvent");
   const docSnap = await getDoc(globalRef);
+
   if (docSnap.exists()) {
     eventID = docSnap.data().eventID;
-    console.log(`📂 Active Event: ${eventID}`);
+    console.log(`📂 Active Event ID: ${eventID}`);
 
-    const eventElement = document.getElementById("currentEvent");
-    if (eventElement) {
-      eventElement.innerText = `📅 Event: ${eventID.replace(/_/g, " ")}`;
+    if (!eventID) {
+      console.warn("⚠️ eventID is undefined or empty!");
+      return;
     }
 
+    // 🛠️ Split eventID to extract name and date
+    const parts = eventID.split("_");
+    if (parts.length < 3) {
+      console.warn("⚠️ Unexpected eventID format!");
+      return;
+    }
+
+    const eventDate = parts.pop(); // Last part is the date
+    const eventName = parts.join(" "); // Remaining parts are the name
+
+    console.log(`📅 Event Name: ${eventName}`);
+    console.log(`📆 Event Date: ${eventDate}`);
+
+    // Update UI
+    const eventElement = document.getElementById("currentEvent");
+    if (eventElement) {
+      eventElement.innerHTML = `<strong>📅 ${eventName} | ${eventDate}</strong>`;
+    }
+
+    // Start listening for ticket updates & update counts
     listenForTicketUpdates();
     updateTicketCounts();
   } else {
-    console.log("⚠️ No event found!");
+    console.log("⚠️ No active event found!");
+
     const eventElement = document.getElementById("currentEvent");
     if (eventElement) {
       eventElement.innerText = "⚠️ No event uploaded.";
@@ -63,6 +85,7 @@ onSnapshot(doc(db, "GlobalSettings", "CurrentEvent"), async () => {
   await fetchEventID();
 });
 
+// 🔹 Initial Fetch
 fetchEventID();
 
 // 🔹 Ticket Scanning Logic
