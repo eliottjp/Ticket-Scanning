@@ -2,7 +2,7 @@
   "name": "Ticket Validate",
   "short_name": "SCTH Scanner",
   "description": "A fast and simple ticket validation app.",
-  "start_url": "/",
+  "start_url": "/scanner.html",
   "display": "fullscreen",
   "background_color": "#6a0dad",
   "theme_color": "#6a0dad",
