@@ -1,6 +1,6 @@
 {
   "name": "Ticket Validate",
-  "short_name": "SCTH Scanner",
+  "short_name": "Ticket Scanner",
   "description": "A fast and simple ticket validation app.",
   "start_url": "/scanner",
   "display": "fullscreen",
