@@ -473,6 +473,7 @@ li {
   body {
     font-size: 14px;
     padding: 5px;
+    zoom: 0.6; /* Adjust if needed */
   }
 
   .scanner-container,
