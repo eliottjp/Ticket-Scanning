@@ -468,3 +468,35 @@ li {
   font-size: 0.8rem;
   color: #555;
 }
+/* Mobile-Friendly Adjustments */
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+    padding: 5px;
+  }
+
+  .scanner-container,
+  .ticket-details {
+    width: 100%;
+    max-width: none;
+    padding: 10px;
+  }
+
+  #barcodeInput {
+    font-size: 16px;
+    padding: 10px;
+  }
+
+  .scan-button {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .history-title {
+    font-size: 16px;
+  }
+
+  .scan-history {
+    font-size: 14px;
+  }
+}

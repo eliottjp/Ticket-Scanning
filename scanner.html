@@ -4,6 +4,21 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Scanner</title>
+        <link rel="manifest" href="/manifest.json">
+        <meta name="theme-color" content="#6a0dad">
+        <!-- Standard favicon -->
+        <link rel="icon" type="image/png" sizes="32x32"
+            href="/icons/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16"
+            href="/icons/favicon-16x16.png">
+
+        <!-- Apple Touch Icon (for iOS Home Screen) -->
+        <link rel="apple-touch-icon" sizes="180x180"
+            href="/icons/apple-touch-icon.png">
+
+        <!-- Favicon for older browsers -->
+        <link rel="shortcut icon" href="/icons/favicon.ico">
+
         <!-- QR Code Scanner Library -->
         <script src="https://unpkg.com/html5-qrcode"></script>
         <script type="module" src="js/scanner.js"></script>
@@ -19,7 +34,7 @@
 
                 <div class="input-wrapper">
                     <input type="text" id="barcodeInput"
-                        class="scanner-input no-keyboard"
+                        class="scanner-input"
                         placeholder="Scan barcode here..." autofocus>
 
                 </div>
@@ -36,13 +51,14 @@
                 <p id="ticketRow">Row: </p>
                 <p id="ticketVIP">VIP: </p>
             </div>
-            <!-- Ticket History -->
+
+            <!-- Ticket History
             <div id="ticketDetails" class="ticket-details">
                 <h3 class="history-title">📜 Scanning History</h3>
                 <div id="scanHistory" class="scan-history">
                     <p class="empty-history">No scans yet...</p>
                 </div>
-            </div>
+            </div> -->
 
             <!-- Scanner Modal (Initially Hidden) -->
             <div id="scannerModal" class="modal">

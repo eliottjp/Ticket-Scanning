@@ -85,9 +85,6 @@ onSnapshot(doc(db, "GlobalSettings", "CurrentEvent"), async () => {
   await fetchEventID();
 });
 
-// // 🔹 Initial Fetch
-// fetchEventID();
-
 // 🔹 Ticket Scanning Logic
 document
   .getElementById("barcodeInput")
@@ -386,6 +383,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const startQRScannerButton = document.getElementById("startQRScanner");
   const closeModalButton = document.querySelector(".close");
   const scannerElement = document.getElementById("scanner");
+  const barcodeInput = document.getElementById("barcodeInput"); // Input field
+  const scanResult = document.getElementById("modalScanResult"); // Scan result display
   let scanner = null;
 
   function startScanner() {
@@ -398,10 +397,7 @@ document.addEventListener("DOMContentLoaded", function () {
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 200, height: 200 } },
         (decodedText) => {
-          document.getElementById(
-            "modalScanResult"
-          ).textContent = `Scanned: ${decodedText}`;
-          setTimeout(closeScannerModal, 1500); // Auto-close after scan
+          handleScan(decodedText); // Process scanned data
         },
         (errorMessage) => console.log("Scanning error:", errorMessage)
       )
@@ -429,6 +425,22 @@ document.addEventListener("DOMContentLoaded", function () {
     stopScanner();
   }
 
+  function handleScan(barcode) {
+    scanResult.textContent = `Scanned: ${barcode}`;
+
+    // Insert scanned barcode into input field
+    barcodeInput.value = barcode;
+    barcodeInput.focus();
+
+    // Close modal immediately
+    closeScannerModal();
+
+    // Delay validation by 1 second
+    setTimeout(() => {
+      barcodeInput.dispatchEvent(new Event("input", { bubbles: true })); // Trigger validation
+    }, 1000);
+  }
+
   startQRScannerButton.addEventListener("click", openScannerModal);
   closeModalButton.addEventListener("click", closeScannerModal);
 
@@ -437,54 +449,4 @@ document.addEventListener("DOMContentLoaded", function () {
       closeScannerModal();
     }
   });
-});
-
-const scanHistory = document.getElementById("scanHistory");
-
-function addScanToHistory(ticket) {
-  const { name, seat, status, vip } = ticket;
-
-  // Create history entry
-  const historyItem = document.createElement("div");
-  historyItem.classList.add("scan-history-item");
-
-  // Apply color coding based on status
-  if (status === "Valid") {
-    historyItem.classList.add("valid-ticket");
-  } else if (status === "Invalid") {
-    historyItem.classList.add("invalid-ticket");
-  } else if (vip) {
-    historyItem.classList.add("vip-ticket");
-  }
-
-  // Timestamp
-  const timestamp = new Date().toLocaleTimeString();
-
-  // History content
-  historyItem.innerHTML = `
-        <span>🎟️ <strong>${name}</strong> - Seat: ${seat}</span>
-        <span class="scan-time">${timestamp}</span>
-    `;
-
-  // Add entry to the top
-  scanHistory.prepend(historyItem);
-
-  // Remove "No scans yet" message if present
-  const emptyMessage = document.querySelector(".empty-history");
-  if (emptyMessage) emptyMessage.remove();
-}
-
-// Example usage (replace with actual scanned ticket data)
-addScanToHistory({
-  name: "John Doe",
-  seat: "A12",
-  status: "Valid",
-  vip: false,
-});
-addScanToHistory({ name: "VIP Guest", seat: "B3", status: "Valid", vip: true });
-addScanToHistory({
-  name: "Jane Smith",
-  seat: "C8",
-  status: "Invalid",
-  vip: false,
 });
