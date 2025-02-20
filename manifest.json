@@ -3,7 +3,7 @@
   "short_name": "SCTH Scanner",
   "description": "A fast and simple ticket validation app.",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#6a0dad",
   "theme_color": "#6a0dad",
   "icons": [
@@ -17,5 +17,7 @@
       "type": "image/png",
       "sizes": "512x512"
     }
-  ]
+  ],
+  "id": "SCTH-SCANNER-APP",
+  "orientation": "portrait"
 }
