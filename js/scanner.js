@@ -450,3 +450,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+  if (window.location.pathname.includes("/scanner/zebra")) {
+    document.body.classList.add("zebra-mode");
+  }
+});

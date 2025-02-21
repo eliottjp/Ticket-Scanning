@@ -470,34 +470,34 @@ li {
 }
 /* Mobile-Friendly Adjustments */
 @media (max-width: 480px) {
-  body {
+  body.zebra-mode {
     font-size: 14px;
     padding: 5px;
     zoom: 0.6; /* Adjust if needed */
   }
+}
 
-  .scanner-container,
-  .ticket-details {
-    width: 100%;
-    max-width: none;
-    padding: 10px;
-  }
+.scanner-container,
+.ticket-details {
+  width: 100%;
+  max-width: none;
+  padding: 10px;
+}
 
-  #barcodeInput {
-    font-size: 16px;
-    padding: 10px;
-  }
+#barcodeInput {
+  font-size: 16px;
+  padding: 10px;
+}
 
-  .scan-button {
-    font-size: 16px;
-    padding: 12px;
-  }
+.scan-button {
+  font-size: 16px;
+  padding: 12px;
+}
 
-  .history-title {
-    font-size: 16px;
-  }
+.history-title {
+  font-size: 16px;
+}
 
-  .scan-history {
-    font-size: 14px;
-  }
+.scan-history {
+  font-size: 14px;
 }
