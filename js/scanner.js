@@ -452,7 +452,8 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-  if (window.location.pathname.includes("/scanner/zebra")) {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("mode") === "zebra") {
     document.body.classList.add("zebra-mode");
   }
 });
