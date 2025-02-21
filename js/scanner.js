@@ -451,9 +451,9 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-document.addEventListener("DOMContentLoaded", function () {
+window.onload = function () {
   const params = new URLSearchParams(window.location.search);
   if (params.get("mode") === "zebra") {
     document.body.classList.add("zebra-mode");
   }
-});
+};
