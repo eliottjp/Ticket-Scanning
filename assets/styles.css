@@ -375,10 +375,17 @@ li {
   text-align: left;
 }
 
-.search-icon {
+.search-button {
+  background: none;
+  border: none;
   font-size: 24px;
   cursor: pointer;
   padding: 5px;
+  transition: transform 0.2s ease;
+}
+
+.search-button:hover {
+  transform: scale(1.1);
 }
 
 #currentEvent {

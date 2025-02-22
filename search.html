@@ -22,26 +22,66 @@
         <link rel="icon" href="data:,">
     </head>
     <body>
-        <div class="container">
-            <h2>🎟️ Search Guest & Check-In</h2>
-            <div id="currentEvent">⌛ Loading event details...</div>
+        <div class="scanner-container">
+            <div class="scanner-header">
+                <h2>Search Tickets</h2>
+                <button class="search-button"
+                    onclick="location.href='scanner.html'">
+                    🏠
+                </div>
+                <div id="currentEvent">⌛ Loading event details...</div>
 
-            <input type="text" id="searchInput"
-                placeholder="Search by guest name..." autocomplete="off">
+                <input type="text" id="searchInput"
+                    placeholder="Search by guest name..." autocomplete="off">
 
-            <ul id="searchResults"></ul>
-        </div>
-
-        <!-- 🔹 Ticket Modal -->
-        <div id="ticketModal" class="modal">
-            <div class="modal-content">
-                <span class="close" onclick="closeModal()">&times;</span>
-                <h2 id="modalGuestName"></h2>
-                <button id="checkInAllBtn" class="check-in-all">✅ Check In
-                    All</button>
-                <ul id="modalTicketList"></ul>
+                <ul id="searchResults"></ul>
             </div>
-        </div>
 
-    </body>
-</html>
+            <!-- 🔹 Ticket Modal -->
+            <div id="ticketModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeModal()">&times;</span>
+                    <h2 id="modalGuestName"></h2>
+                    <button id="checkInAllBtn" class="check-in-all">✅ Check In
+                        All</button>
+                    <ul id="modalTicketList"></ul>
+                </div>
+            </div>
+            <!-- 🔹 Progress & Stats Section -->
+            <div class="progress-card">
+                <div class="progress-header">
+                    <!-- Left Side: Scanned Count -->
+                    <div>
+                        <div class="progress-number"
+                            id="scannedCount">0</div>
+                        <div class="progress-label">Scanned</div>
+                    </div>
+
+                    <!-- Center: Progress Circle -->
+                    <div class="progress-container">
+                        <div class="progress-circle">
+                            <div class="progress-text">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side: Remaining Count -->
+                    <div>
+                        <div class="progress-number"
+                            id="remainingCount">0</div>
+                        <div class="progress-label">Remaining</div>
+                    </div>
+                </div>
+
+                <!-- 🔹 Toggle Switch (Below Progress Chart) -->
+                <div class="toggle-container">
+                    <label class="switch">
+                        <input type="checkbox" id="scanToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span id="toggleLabel">Scanning In</span>
+                    <button id="startQRScanner"
+                        class="camera-button" for="barcodeInput">📸</butt>
+                </div>
+            </div>
+        </body>
+    </html>
