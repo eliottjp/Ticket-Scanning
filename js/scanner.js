@@ -21,15 +21,6 @@ const firebaseConfig = {
   appId: "1:431290258037:web:73fa6d44e5335c37989e3c",
 };
 
-if (typeof globalThis === "undefined") {
-  Object.defineProperty(Object.prototype, "globalThis", {
-    get: function () {
-      return this;
-    },
-    configurable: true,
-  });
-}
-
 // 🔹 Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
