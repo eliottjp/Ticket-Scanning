@@ -363,6 +363,30 @@ li {
   border-radius: 10px;
 }
 
+.scanner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scanner-header h2 {
+  margin: 0;
+  flex: 1;
+  text-align: left;
+}
+
+.search-icon {
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+}
+
+#currentEvent {
+  margin: 0;
+  flex: 1;
+  text-align: left;
+}
+
 .scanner-box {
   width: 300px;
   height: 300px;
