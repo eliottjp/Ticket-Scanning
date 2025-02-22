@@ -193,7 +193,7 @@ function showFeedback(message, color, sound, statusClass) {
   // Ensure the background resets after 500ms
   setTimeout(() => {
     document.body.classList.remove(`flash-${color}`);
-  }, 700);
+  }, 900);
 }
 
 // 🔹 Update Ticket Counts & Progress Circle
