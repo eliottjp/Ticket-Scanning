@@ -33,6 +33,43 @@ const soundVIP = new Audio("sounds/vip.mp3");
 let eventID = null;
 let debounceTimeout;
 
+document.addEventListener("DOMContentLoaded", function () {
+  const barcodeInput = document.getElementById("barcodeInput");
+
+  // Keep the input focused
+  function keepFocus() {
+    barcodeInput.focus();
+  }
+  keepFocus();
+  document.body.addEventListener("click", keepFocus);
+
+  // Listen for scan data
+  function handleScan(event) {
+    const scannedData = event.detail.data;
+    barcodeInput.value = scannedData; // Insert scanned barcode into input field
+    console.log("Scanned Data: ", scannedData);
+  }
+
+  document.addEventListener("scanData", handleScan);
+
+  // Register DataWedge Intent Listener
+  function registerDataWedgeListener() {
+    if (window.ZebraBridge) {
+      window.ZebraBridge.registerBroadcastReceiver(
+        "com.zebra.browser.ACTION",
+        function (data) {
+          console.log("Received scan:", data);
+          barcodeInput.value = data["com.symbol.datawedge.data_string"] || "";
+        }
+      );
+    } else {
+      console.error("ZebraBridge API not available.");
+    }
+  }
+
+  registerDataWedgeListener();
+});
+
 // 🔹 Fetch latest event details from Firestore
 async function fetchEventID() {
   const globalRef = doc(db, "GlobalSettings", "CurrentEvent");
