@@ -504,7 +504,7 @@ li {
   body.zebra-mode {
     font-size: 14px;
     padding: 5px;
-    zoom: 0.8; /* Adjust if needed */
+    zoom: 0.75; /* Adjust if needed */
   }
 }
 
@@ -531,4 +531,8 @@ li {
 
 .scan-history {
   font-size: 14px;
+}
+
+.zebra-mode .search-button {
+  display: none;
 }

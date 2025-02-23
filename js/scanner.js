@@ -495,6 +495,13 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("mode") === "zebra") {
+    document.querySelector(".search-icon").style.display = "none";
+  }
+});
+
 window.onload = function () {
   const params = new URLSearchParams(window.location.search);
   if (params.get("mode") === "zebra") {
