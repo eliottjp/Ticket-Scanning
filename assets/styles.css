@@ -504,7 +504,7 @@ li {
   body.zebra-mode {
     font-size: 14px;
     padding: 5px;
-    zoom: 0.6; /* Adjust if needed */
+    zoom: 0.8; /* Adjust if needed */
   }
 }
 
