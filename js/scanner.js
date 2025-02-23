@@ -33,6 +33,13 @@ const soundVIP = new Audio("sounds/vip.mp3");
 let eventID = null;
 let debounceTimeout;
 
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/sw.js")
+    .then(() => console.log("Service Worker Registered"))
+    .catch((err) => console.error("Service Worker Failed", err));
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   const barcodeInput = document.getElementById("barcodeInput");
 
