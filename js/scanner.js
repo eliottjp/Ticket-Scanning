@@ -1,29 +1,13 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-  doc,
-  getDoc,
-  onSnapshot,
-} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+// Import Supabase
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-// 🔹 Firebase Config
-const firebaseConfig = {
-  apiKey: "AIzaSyCd5lYY7EAkxYzV_lbolu7KFx8nTEHiLug",
-  authDomain: "ticket-scanner-2b7f1.firebaseapp.com",
-  projectId: "ticket-scanner-2b7f1",
-  storageBucket: "ticket-scanner-2b7f1.appspot.com",
-  messagingSenderId: "431290258037",
-  appId: "1:431290258037:web:73fa6d44e5335c37989e3c",
-};
+// 🔹 Supabase Config
+const SUPABASE_URL = "https://apfyjrkekezonmobnxte.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZnlqcmtla2V6b25tb2JueHRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzMTQ0NTIsImV4cCI6MjA1NTg5MDQ1Mn0.zHBBivvtbByG7FDp9Rq0OeZ9wY669WVXmy2r_ZuYTiQ";
 
-// 🔹 Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// 🔹 Initialize Supabase
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 🎵 Load Sound Effects
 const soundSuccess = new Audio("sounds/success.mp3");
@@ -77,19 +61,22 @@ document.addEventListener("DOMContentLoaded", function () {
   registerDataWedgeListener();
 });
 
-// 🔹 Fetch latest event details from Firestore
+// 🔹 Fetch latest event details from Supabase
 async function fetchEventID() {
-  const globalRef = doc(db, "GlobalSettings", "CurrentEvent");
-  const docSnap = await getDoc(globalRef);
+  let { data, error } = await supabase
+    .from("GlobalSettings")
+    .select("eventID")
+    .eq("id", "CurrentEvent") // Assuming 'CurrentEvent' is the row's ID
+    .single();
 
-  if (docSnap.exists()) {
-    eventID = docSnap.data().eventID;
+  if (error) {
+    console.error("⚠️ Error fetching event:", error);
+    return;
+  }
+
+  if (data && data.eventID) {
+    const eventID = data.eventID;
     console.log(`📂 Active Event ID: ${eventID}`);
-
-    if (!eventID) {
-      console.warn("⚠️ eventID is undefined or empty!");
-      return;
-    }
 
     // 🛠️ Split eventID to extract name and date
     const parts = eventID.split("_");
@@ -124,12 +111,19 @@ async function fetchEventID() {
 }
 
 // 🔄 Auto-update scanner when a new event is uploaded
-onSnapshot(doc(db, "GlobalSettings", "CurrentEvent"), async () => {
-  console.log("🔄 Event Updated!");
-  await fetchEventID();
-});
+supabase
+  .channel("realtime-global-settings")
+  .on(
+    "postgres_changes",
+    { event: "UPDATE", schema: "public", table: "GlobalSettings" },
+    async () => {
+      console.log("🔄 Event Updated!");
+      await fetchEventID();
+    }
+  )
+  .subscribe();
 
-// 🔹 Ticket Scanning Logic
+// 🔹 Ticket Scanning Logic (Supabase)
 document
   .getElementById("barcodeInput")
   .addEventListener("input", async function (event) {
@@ -149,11 +143,25 @@ document
       }
 
       try {
-        let ticketsRef = collection(db, eventID);
-        let q = query(ticketsRef, where("barcode", "==", barcode));
-        let querySnapshot = await getDocs(q);
+        // 🔎 Search for the ticket in Supabase
+        let { data: tickets, error } = await supabase
+          .from(eventID) // Table name is the eventID
+          .select("*")
+          .eq("barcode", barcode)
+          .limit(1); // Expecting a single result
 
-        if (querySnapshot.empty) {
+        if (error) {
+          console.error("❌ Error fetching ticket:", error);
+          showFeedback(
+            "⚠️ Error fetching ticket.",
+            "red",
+            soundError,
+            "scan-history-invalid"
+          );
+          return;
+        }
+
+        if (!tickets || tickets.length === 0) {
           showFeedback(
             "❌ Ticket Not Found!",
             "red",
@@ -162,50 +170,62 @@ document
           );
           clearTicketDetails();
         } else {
-          querySnapshot.forEach(async (docSnap) => {
-            let ticketData = docSnap.data();
-            let ticketRef = doc(db, eventID, docSnap.id);
+          let ticketData = tickets[0];
 
-            document.getElementById(
-              "ticketName"
-            ).innerText = `Name: ${ticketData.name}`;
-            document.getElementById(
-              "ticketSeat"
-            ).innerText = `Seat Number: ${ticketData.seatNumber}`;
-            document.getElementById(
-              "ticketRow"
-            ).innerText = `Row: ${ticketData.rowNumber}`;
-            document.getElementById("ticketVIP").innerText = `VIP: ${
-              ticketData.vipGuest === "Yes" ? "✅ Yes" : "❌ No"
-            }`;
+          document.getElementById(
+            "ticketName"
+          ).innerText = `Name: ${ticketData.name}`;
+          document.getElementById(
+            "ticketSeat"
+          ).innerText = `Seat Number: ${ticketData.seatNumber}`;
+          document.getElementById(
+            "ticketRow"
+          ).innerText = `Row: ${ticketData.rowNumber}`;
+          document.getElementById("ticketVIP").innerText = `VIP: ${
+            ticketData.vipGuest === "Yes" ? "✅ Yes" : "❌ No"
+          }`;
 
-            if (ticketData.checkedIn) {
+          if (ticketData.checkedIn) {
+            showFeedback(
+              "⚠️ Ticket already checked in!",
+              "red",
+              soundError,
+              "scan-history-invalid"
+            );
+          } else {
+            // ✅ Mark ticket as checked in
+            let { error: updateError } = await supabase
+              .from(eventID)
+              .update({ checkedIn: true })
+              .eq("id", ticketData.id);
+
+            if (updateError) {
+              console.error("❌ Error updating ticket:", updateError);
               showFeedback(
-                "⚠️ Ticket already checked in!",
+                "⚠️ Error updating ticket.",
                 "red",
                 soundError,
                 "scan-history-invalid"
               );
-            } else {
-              await updateDoc(ticketRef, { checkedIn: true });
-
-              let message = `✅ ${ticketData.name}`;
-              let color = "green";
-              let sound = soundSuccess;
-              let statusClass = "scan-history-valid";
-
-              if (ticketData.vipGuest === "Yes") {
-                message += " 🎉 VIP";
-                color = "gold";
-                sound = soundVIP;
-                statusClass = "scan-history-vip";
-              }
-
-              showFeedback(message, color, sound, statusClass);
+              return;
             }
 
-            updateTicketCounts();
-          });
+            let message = `✅ ${ticketData.name}`;
+            let color = "green";
+            let sound = soundSuccess;
+            let statusClass = "scan-history-valid";
+
+            if (ticketData.vipGuest === "Yes") {
+              message += " 🎉 VIP";
+              color = "gold";
+              sound = soundVIP;
+              statusClass = "scan-history-vip";
+            }
+
+            showFeedback(message, color, sound, statusClass);
+          }
+
+          updateTicketCounts();
         }
       } catch (error) {
         console.error("❌ Error scanning ticket:", error);
@@ -244,11 +264,27 @@ function showFeedback(message, color, sound, statusClass) {
 async function updateTicketCounts() {
   if (!eventID) return;
 
-  let ticketsRef = collection(db, eventID);
-  let totalTickets = (await getDocs(ticketsRef)).size;
-  let checkedInCount = (
-    await getDocs(query(ticketsRef, where("checkedIn", "==", true)))
-  ).size;
+  // Fetch total tickets
+  let { count: totalTickets, error: totalError } = await supabase
+    .from(eventID)
+    .select("*", { count: "exact" });
+
+  if (totalError) {
+    console.error("❌ Error fetching total tickets:", totalError);
+    return;
+  }
+
+  // Fetch checked-in tickets
+  let { count: checkedInCount, error: checkedError } = await supabase
+    .from(eventID)
+    .select("*", { count: "exact" })
+    .eq("checkedIn", true);
+
+  if (checkedError) {
+    console.error("❌ Error fetching checked-in tickets:", checkedError);
+    return;
+  }
+
   let remainingCount = totalTickets - checkedInCount;
 
   document.getElementById("scannedCount").innerText = checkedInCount;
@@ -325,11 +361,24 @@ document
       }
 
       try {
-        let ticketsRef = collection(db, eventID);
-        let q = query(ticketsRef, where("barcode", "==", barcode));
-        let querySnapshot = await getDocs(q);
+        // 🔍 Query ticket in Supabase
+        let { data: tickets, error } = await supabase
+          .from(eventID)
+          .select("*")
+          .eq("barcode", barcode);
 
-        if (querySnapshot.empty) {
+        if (error) {
+          console.error("❌ Error fetching ticket:", error);
+          showFeedback(
+            "⚠️ Error fetching ticket.",
+            "red",
+            soundError,
+            "scan-history-invalid"
+          );
+          return;
+        }
+
+        if (!tickets || tickets.length === 0) {
           showFeedback(
             "❌ Ticket Not Found!",
             "red",
@@ -338,75 +387,100 @@ document
           );
           clearTicketDetails();
         } else {
-          querySnapshot.forEach(async (docSnap) => {
-            let ticketData = docSnap.data();
-            let ticketRef = doc(db, eventID, docSnap.id);
+          let ticketData = tickets[0];
 
-            document.getElementById(
-              "ticketName"
-            ).innerText = `Name: ${ticketData.name}`;
-            document.getElementById(
-              "ticketSeat"
-            ).innerText = `Seat Number: ${ticketData.seatNumber}`;
-            document.getElementById(
-              "ticketRow"
-            ).innerText = `Row: ${ticketData.rowNumber}`;
-            document.getElementById("ticketVIP").innerText = `VIP: ${
-              ticketData.vipGuest === "Yes" ? "✅ Yes" : "❌ No"
-            }`;
+          document.getElementById(
+            "ticketName"
+          ).innerText = `Name: ${ticketData.name}`;
+          document.getElementById(
+            "ticketSeat"
+          ).innerText = `Seat Number: ${ticketData.seatNumber}`;
+          document.getElementById(
+            "ticketRow"
+          ).innerText = `Row: ${ticketData.rowNumber}`;
+          document.getElementById("ticketVIP").innerText = `VIP: ${
+            ticketData.vipGuest === "Yes" ? "✅ Yes" : "❌ No"
+          }`;
 
-            if (scanMode === "in") {
-              if (ticketData.checkedIn) {
-                showFeedback(
-                  "⚠️ Ticket already checked in!",
-                  "red",
-                  soundError,
-                  "scan-history-invalid"
-                );
-              } else {
-                await updateDoc(ticketRef, {
-                  checkedIn: true,
-                  timestamp: new Date().toISOString(), // ✅ Save scan timestamp
-                });
-
-                let message = `✅ ${ticketData.name}`;
-                let color = "green";
-                let sound = soundSuccess;
-                let statusClass = "scan-history-valid";
-
-                if (ticketData.vipGuest === "Yes") {
-                  message += " 🎉 VIP";
-                  color = "gold";
-                  sound = soundVIP;
-                  statusClass = "scan-history-vip";
-                }
-
-                showFeedback(message, color, sound, statusClass);
-              }
+          if (scanMode === "in") {
+            if (ticketData.checkedIn) {
+              showFeedback(
+                "⚠️ Ticket already checked in!",
+                "red",
+                soundError,
+                "scan-history-invalid"
+              );
             } else {
-              if (!ticketData.checkedIn) {
+              // ✅ Mark ticket as checked in
+              let { error: updateError } = await supabase
+                .from(eventID)
+                .update({
+                  checkedIn: true,
+                  timestamp: new Date().toISOString(),
+                })
+                .eq("barcode", barcode);
+
+              if (updateError) {
+                console.error("❌ Error updating ticket:", updateError);
                 showFeedback(
-                  "⚠️ Ticket was never checked in!",
+                  "⚠️ Error updating ticket.",
                   "red",
                   soundError,
                   "scan-history-invalid"
                 );
-              } else {
-                await updateDoc(ticketRef, {
-                  checkedIn: false,
-                  timestamp: null, // ✅ Remove timestamp when checking out
-                });
-                showFeedback(
-                  `🔄 ${ticketData.name} Checked Out`,
-                  "blue",
-                  soundSuccess,
-                  "scan-history-valid"
-                );
+                return;
               }
-            }
 
-            updateTicketCounts();
-          });
+              let message = `✅ ${ticketData.name}`;
+              let color = "green";
+              let sound = soundSuccess;
+              let statusClass = "scan-history-valid";
+
+              if (ticketData.vipGuest === "Yes") {
+                message += " 🎉 VIP";
+                color = "gold";
+                sound = soundVIP;
+                statusClass = "scan-history-vip";
+              }
+
+              showFeedback(message, color, sound, statusClass);
+            }
+          } else {
+            if (!ticketData.checkedIn) {
+              showFeedback(
+                "⚠️ Ticket was never checked in!",
+                "red",
+                soundError,
+                "scan-history-invalid"
+              );
+            } else {
+              // 🔄 Mark ticket as checked out
+              let { error: updateError } = await supabase
+                .from(eventID)
+                .update({ checkedIn: false, timestamp: null })
+                .eq("barcode", barcode);
+
+              if (updateError) {
+                console.error("❌ Error updating ticket:", updateError);
+                showFeedback(
+                  "⚠️ Error updating ticket.",
+                  "red",
+                  soundError,
+                  "scan-history-invalid"
+                );
+                return;
+              }
+
+              showFeedback(
+                `🔄 ${ticketData.name} Checked Out`,
+                "blue",
+                soundSuccess,
+                "scan-history-valid"
+              );
+            }
+          }
+
+          updateTicketCounts();
         }
       } catch (error) {
         console.error("❌ Error scanning ticket:", error);
