@@ -1,80 +1,66 @@
-// Import Supabase
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  getDoc,
+  doc,
+  setDoc,
+  query,
+  where,
+  updateDoc,
+} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+import { writeBatch } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 
-// 🔹 Supabase Config
-const SUPABASE_URL = "https://apfyjrkekezonmobnxte.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZnlqcmtla2V6b25tb2JueHRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzMTQ0NTIsImV4cCI6MjA1NTg5MDQ1Mn0.zHBBivvtbByG7FDp9Rq0OeZ9wY669WVXmy2r_ZuYTiQ";
+// 🔹 Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyCd5lYY7EAkxYzV_lbolu7KFx8nTEHiLug",
+  authDomain: "ticket-scanner-2b7f1.firebaseapp.com",
+  projectId: "ticket-scanner-2b7f1",
+  storageBucket: "ticket-scanner-2b7f1.appspot.com",
+  messagingSenderId: "431290258037",
+  appId: "1:431290258037:web:73fa6d44e5335c37989e3c",
+};
 
-// 🔹 Initialize Supabase
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// 🔹 Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 let eventID = null;
 let scanChart = null; // Store Chart.js instance
 
-// 🔹 Fetch Active Event ID from Supabase
+// 🔹 Fetch Active Event ID
 async function fetchEventID() {
-  try {
-    console.log("🔄 Fetching active event ID...");
-
-    let { data, error } = await supabase
-      .from("globalsettings") // ✅ Check table name
-      .select("eventid") // ✅ Ensure correct column name (use lowercase if necessary)
-      .eq("id", "CurrentEvent")
-      .single();
-
-    if (error) throw error;
-
-    if (data?.eventid) {
-      eventID = data.eventid; // ✅ Match the exact column name
-      console.log(`📂 Active Event: ${eventID}`);
-
-      // 🔄 Update UI Data
-      updateTicketCounts();
-      loadScanChartData();
-    } else {
-      console.warn("⚠️ No active event found in globalsettings!");
-      eventID = null; // ✅ Prevent undefined errors
-    }
-  } catch (err) {
-    console.error("❌ Error fetching event ID:", err.message);
+  const globalRef = doc(db, "GlobalSettings", "CurrentEvent");
+  const docSnap = await getDoc(globalRef);
+  if (docSnap.exists()) {
+    eventID = docSnap.data().eventID;
+    console.log(`📂 Active Event: ${eventID}`);
+    updateTicketCounts();
+    loadScanChartData(); // 📊 Load 5-minute interval chart
+  } else {
+    console.log("⚠️ No event found!");
   }
 }
 
-// 🔥 Call fetchEventID() on page load
 fetchEventID();
 
-// 🔹 Update Ticket Counts (Scanned & Remaining) using Supabase
+// 🔹 Update Ticket Counts (Scanned & Remaining)
 async function updateTicketCounts() {
   if (!eventID) return;
 
-  try {
-    // 🔹 Fetch total ticket count
-    let { count: totalTickets, error: totalError } = await supabase
-      .from(eventID)
-      .select("*", { count: "exact", head: true });
+  let ticketsRef = collection(db, eventID);
+  let totalTickets = (await getDocs(ticketsRef)).size;
+  let checkedInCount = (
+    await getDocs(query(ticketsRef, where("checkedIn", "==", true)))
+  ).size;
+  let remainingCount = totalTickets - checkedInCount;
 
-    if (totalError) throw totalError;
-
-    // 🔹 Fetch checked-in ticket count
-    let { count: checkedInCount, error: checkedInError } = await supabase
-      .from(eventID)
-      .select("*", { count: "exact", head: true })
-      .eq("checkedIn", true);
-
-    if (checkedInError) throw checkedInError;
-
-    let remainingCount = totalTickets - checkedInCount;
-
-    // 🔹 Update UI
-    document.getElementById("scannedCount").innerText = checkedInCount;
-    document.getElementById("remainingCount").innerText = remainingCount;
-  } catch (err) {
-    console.error("❌ Error updating ticket counts:", err);
-  }
+  document.getElementById("scannedCount").innerText = checkedInCount;
+  document.getElementById("remainingCount").innerText = remainingCount;
 }
 
-// 🔹 Load Scan Data (5-Minute Intervals) from Supabase
+// 🔹 Load Scan Data (5-Minute Intervals)
 async function loadScanChartData() {
   if (!eventID) return;
 
@@ -85,20 +71,15 @@ async function loadScanChartData() {
     timeSlots.push({ label, count: 0 });
   }
 
-  try {
-    // 🔹 Fetch checked-in tickets from Supabase
-    let { data, error } = await supabase
-      .from(eventID)
-      .select("timestamp")
-      .eq("checkedIn", true)
-      .not("timestamp", "is", null);
+  let ticketsRef = collection(db, eventID);
+  let querySnapshot = await getDocs(
+    query(ticketsRef, where("checkedIn", "==", true))
+  );
 
-    if (error) throw error;
-
-    // 🔹 Process timestamps
-    data.forEach((ticket) => {
-      let date = new Date(ticket.timestamp); // ✅ Supabase stores timestamps in ISO format
-
+  querySnapshot.forEach((docSnap) => {
+    let data = docSnap.data();
+    if (data.timestamp && data.timestamp.seconds) {
+      let date = new Date(data.timestamp.seconds * 1000); // ✅ Convert Firestore timestamp to JS Date
       let hour = date.getHours();
       let minutes = date.getMinutes();
 
@@ -109,13 +90,10 @@ async function loadScanChartData() {
         let index = Math.floor(minutes / 5) + 6;
         timeSlots[index].count++;
       }
-    });
+    }
+  });
 
-    // 🔹 Render chart with updated data
-    renderScanChart(timeSlots);
-  } catch (err) {
-    console.error("❌ Error loading scan data:", err);
-  }
+  renderScanChart(timeSlots);
 }
 
 // 🔹 Render 5-Minute Interval Bar Chart
@@ -152,6 +130,7 @@ function renderScanChart(timeSlots) {
   });
 }
 
+// 🔹 Reset Scanned Tickets
 document.getElementById("resetButton").addEventListener("click", async () => {
   if (!eventID) {
     alert("⚠️ No event found.");
@@ -163,25 +142,26 @@ document.getElementById("resetButton").addEventListener("click", async () => {
   );
   if (!confirmation) return;
 
-  try {
-    // 🔹 Reset all checked-in tickets for the current event
-    let { error } = await supabase
-      .from(eventID) // The table name is the eventID
-      .update({ checkedIn: false, timestamp: null }) // Reset values
-      .eq("checkedIn", true); // Only update scanned tickets
+  let ticketsRef = collection(db, eventID);
+  let querySnapshot = await getDocs(
+    query(ticketsRef, where("checkedIn", "==", true))
+  );
 
-    if (error) throw error;
+  querySnapshot.forEach(async (docSnap) => {
+    let ticketRef = doc(db, eventID, docSnap.id);
+    await updateDoc(ticketRef, {
+      checkedIn: false,
+      timestamp: null, // 🔥 Remove timestamp to reset scan time
+    });
+  });
 
-    alert("✅ All scanned tickets have been reset.");
-    updateTicketCounts();
-    loadScanChartData();
-  } catch (error) {
-    console.error("❌ Error resetting tickets:", error);
-    alert("❌ Error resetting tickets.");
-  }
+  alert("✅ All scanned tickets have been reset.");
+  updateTicketCounts();
+  loadScanChartData();
 });
 
-// 🔹 CSV File Upload & Store in Supabase
+// 🔹 CSV File Upload & Store in Firestore
+// 🔹 CSV File Upload & Store in Firestore
 document
   .getElementById("uploadBtn")
   .addEventListener("click", async function () {
@@ -190,7 +170,7 @@ document
     const eventDate = document.getElementById("eventDate").value.trim();
 
     if (!fileInput.files.length || !eventName || !eventDate) {
-      alert("❌ Please select a file and enter event details.");
+      alert("Please select a file and enter event details.");
       return;
     }
 
@@ -199,46 +179,40 @@ document
 
     reader.onload = async function (e) {
       const csvData = e.target.result;
-      let rows = csvData
-        .split("\n")
-        .map((row) => row.split(",").map((cell) => cell.trim()));
+      let rows = csvData.split("\n").map((row) => row.split(","));
 
       if (rows.length < 4) {
         console.error("⚠️ CSV file is missing required columns.");
-        alert("❌ CSV file format incorrect. Please check the template.");
         return;
       }
 
-      // 🔹 Create a unique and valid event ID
+      // 🔹 Create a unique event ID
       let eventID = `${eventName.replace(/\s+/g, "_")}_${eventDate}`;
       console.log(`📂 Event ID: ${eventID}`);
 
-      // 🔹 Ensure eventID is a valid table name
-      eventID = eventID.replace(/[^a-zA-Z0-9_]/g, ""); // Remove invalid characters
-
-      // 🔹 Store event ID in Supabase (globalsettings table)
-      let { error: globalError } = await supabase
-        .from("globalsettings")
-        .upsert([{ id: "CurrentEvent", eventid: eventID }]); // ✅ Use correct column name
-
-      if (globalError) {
-        console.error("❌ Error saving event ID:", globalError);
-        alert("❌ Error saving event ID.");
-        return;
-      }
+      // 🔹 Store event ID globally in Firestore
+      const globalRef = doc(db, "GlobalSettings", "CurrentEvent");
+      await setDoc(globalRef, { eventID }).catch((error) =>
+        console.error("❌ Error saving event ID:", error)
+      );
 
       // 🔹 Skip the first 3 rows of headers
       rows.splice(0, 3);
       console.log(`🔍 Total rows after removing headers: ${rows.length}`);
 
-      let batchSize = 500;
+      let batchSize = 500; // Firestore batch limit
       let batchPromises = [];
       let uniqueIDs = new Set();
-      let ticketBatch = [];
       let totalUploaded = 0;
 
       // 🔹 Process CSV Rows
+      let batch = writeBatch(db);
+      let i = 0;
+
       for (let row of rows) {
+        console.log("🔍 Row Data:", row);
+        console.log("🔢 Row Length:", row.length);
+
         if (row.length < 12) {
           console.warn(
             `⚠️ Skipped row due to insufficient columns (${row.length}):`,
@@ -247,7 +221,7 @@ document
           continue;
         }
 
-        let ticketID = row[0]?.replace(/['"]/g, "").trim();
+        let ticketID = row[0]?.replace(/['"]/g, "").trim(); // 🔹 Use ID from the 1st column
         let name = row[3]?.replace(/['"]/g, "").trim() || "Unknown";
         let barcode = row[2]?.replace(/['"]/g, "").trim() || "";
         let confirmation = row[8]?.replace(/['"]/g, "").trim() || "";
@@ -268,8 +242,6 @@ document
         }
 
         let ticketData = {
-          id: ticketID,
-          eventid: eventID, // ✅ Use lowercase column name
           name,
           barcode,
           confirmation,
@@ -277,22 +249,23 @@ document
           seatNumber,
           vipGuest: isVIP,
           checkedIn: false,
-          timestamp: null,
         };
 
-        ticketBatch.push(ticketData);
+        console.log("✅ Added ticket:", ticketData);
+        let ticketRef = doc(collection(db, eventID), ticketID);
+        batch.set(ticketRef, ticketData);
         totalUploaded++;
 
-        // 🔹 Upload in batches
-        if (ticketBatch.length >= batchSize) {
-          batchPromises.push(supabase.from(eventID).insert(ticketBatch));
-          ticketBatch = [];
+        // 🔹 Commit batch if limit is reached
+        if (++i % batchSize === 0) {
+          batchPromises.push(batch.commit());
+          batch = writeBatch(db);
         }
       }
 
-      // 🔹 Upload remaining tickets
-      if (ticketBatch.length > 0) {
-        batchPromises.push(supabase.from(eventID).insert(ticketBatch));
+      // 🔹 Upload remaining batch
+      if (i % batchSize !== 0) {
+        batchPromises.push(batch.commit());
       }
 
       // 🔹 Upload all batches

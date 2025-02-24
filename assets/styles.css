@@ -536,22 +536,3 @@ li {
 .zebra-mode .search-button {
   display: none;
 }
-
-#eventDetails {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-#currentEvent {
-  font-size: 18px;
-  font-weight: bold;
-}
-
-#countdownTimer {
-  font-size: 18px;
-  font-weight: bold;
-  color: green; /* Default color */
-  transition: color 0.5s ease-in-out;
-}
