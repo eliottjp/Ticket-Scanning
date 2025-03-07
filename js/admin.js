@@ -4,6 +4,7 @@ import {
   collection,
   getDocs,
   getDoc,
+  arrayUnion,
   doc,
   setDoc,
   query,
@@ -161,7 +162,6 @@ document.getElementById("resetButton").addEventListener("click", async () => {
 });
 
 // 🔹 CSV File Upload & Store in Firestore
-// 🔹 CSV File Upload & Store in Firestore
 document
   .getElementById("uploadBtn")
   .addEventListener("click", async function () {
@@ -190,11 +190,29 @@ document
       let eventID = `${eventName.replace(/\s+/g, "_")}_${eventDate}`;
       console.log(`📂 Event ID: ${eventID}`);
 
-      // 🔹 Store event ID globally in Firestore
+      // 🔹 Store event ID in "GlobalSettings/CurrentEvent"
       const globalRef = doc(db, "GlobalSettings", "CurrentEvent");
       await setDoc(globalRef, { eventID }).catch((error) =>
         console.error("❌ Error saving event ID:", error)
       );
+
+      // 🔹 Add event ID to "GlobalSettings/EventList"
+      const eventListRef = doc(db, "GlobalSettings", "EventList");
+      try {
+        const snapshot = await getDoc(eventListRef);
+        if (snapshot.exists()) {
+          await updateDoc(eventListRef, {
+            events: arrayUnion(eventID), // Adds event if not already in the list
+          });
+        } else {
+          await setDoc(eventListRef, {
+            events: [eventID], // Creates the list if it doesn’t exist
+          });
+        }
+        console.log(`✅ Event "${eventID}" added to EventList.`);
+      } catch (error) {
+        console.error("❌ Error updating event list:", error);
+      }
 
       // 🔹 Skip the first 3 rows of headers
       rows.splice(0, 3);
@@ -282,3 +300,97 @@ document
 
     reader.readAsText(file);
   });
+
+//
+async function loadEvents() {
+  const eventSelect = document.getElementById("eventDropdown");
+  eventSelect.innerHTML = ""; // Clear existing options
+
+  // 🔹 Get the event list
+  const eventListRef = doc(db, "GlobalSettings", "EventList");
+  const snapshot = await getDoc(eventListRef);
+
+  if (!snapshot.exists()) {
+    console.error("⚠️ EventList document not found!");
+    return;
+  }
+
+  const events = snapshot.data().events || []; // Get stored event names
+
+  events.forEach((eventName) => {
+    let option = document.createElement("option");
+    option.value = eventName;
+    option.textContent = eventName;
+    eventSelect.appendChild(option);
+  });
+
+  // 🔹 Load the last selected event from Firestore
+  try {
+    const currentEventRef = doc(db, "GlobalSettings", "CurrentEvent");
+    const currentSnapshot = await getDoc(currentEventRef);
+
+    if (currentSnapshot.exists()) {
+      const lastEvent = currentSnapshot.data().eventID;
+      eventSelect.value = lastEvent; // Set dropdown to last used event
+      window.globalEvent = lastEvent;
+      console.log("✅ Loaded last used event:", lastEvent);
+    }
+  } catch (error) {
+    console.error("❌ Error loading last event:", error);
+  }
+}
+
+// Ensure dropdown loads on page load
+document.addEventListener("DOMContentLoaded", loadEvents);
+
+async function selectEvent() {
+  const eventSelect = document.getElementById("eventDropdown");
+  if (!eventSelect) {
+    console.error("⚠️ Event dropdown not found!");
+    return;
+  }
+
+  const selectedEvent = eventSelect.value;
+  window.globalEvent = selectedEvent;
+  localStorage.setItem("globalEvent", selectedEvent); // Save locally
+  console.log("✅ Selected Event:", selectedEvent);
+
+  try {
+    // 🔹 Update Firestore with the new eventID
+    const currentEventRef = doc(db, "GlobalSettings", "CurrentEvent");
+    await setDoc(currentEventRef, { eventID: selectedEvent }, { merge: true });
+
+    console.log("✅ Firestore updated with new Current Event:", selectedEvent);
+    alert("✅ Event selection updated successfully!");
+  } catch (error) {
+    console.error("❌ Error updating Firestore:", error);
+    alert("❌ Error updating event selection.");
+  }
+}
+
+// Ensure `selectEvent()` is globally available
+window.selectEvent = selectEvent;
+
+// 🔹 Fetch Collections (Workaround for listCollections)
+async function getCollections() {
+  const globalSettingsRef = collection(db, "GlobalSettings"); // Reference
+  const querySnapshot = await getDocs(globalSettingsRef);
+
+  let collections = [];
+  querySnapshot.forEach((doc) => {
+    collections.push(doc.id); // Store collection names
+  });
+
+  return collections;
+}
+
+// 🔹 Run on Page Load
+document.addEventListener("DOMContentLoaded", loadEvents);
+
+document.addEventListener("DOMContentLoaded", () => {
+  const savedEvent = localStorage.getItem("globalEvent");
+  if (savedEvent) {
+    document.getElementById("eventDropdown").value = savedEvent;
+    globalEvent = savedEvent;
+  }
+});

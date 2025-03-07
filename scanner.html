@@ -32,35 +32,39 @@
                 <div class="scanner-header">
                     <h2>Scan Ticket</h2>
                     <button class="search-button"
-                        id="startQRScanner">
-                        📸
+                        id="downloadTickets">
+                        📲
                         <button class="search-button"
-                            onclick="location.href='search.html'">
-                            🔍
+                            id="startQRScanner">
+                            📸
+                            <button class="search-button"
+                                onclick="location.href='search.html'">
+                                🔍
+
+                            </div>
+                            <div id="currentEvent">⌛ Loading event
+                                details...</div>
+
+                            <!-- <div class="input-wrapper"> -->
+                            <input type="text" id="barcodeInput"
+                                placeholder="Scan barcode here..." autofocus>
+
+                            <!-- </div> -->
+
+                            <!-- Scan Status Message -->
+                            <div id="scanStatus" class="scan-status"></div>
 
                         </div>
-                        <div id="currentEvent">⌛ Loading event details...</div>
 
-                        <!-- <div class="input-wrapper"> -->
-                        <input type="text" id="barcodeInput"
-                            placeholder="Scan barcode here..." autofocus>
+                        <!-- Ticket Details -->
+                        <div id="ticketDetails" class="ticket-details">
+                            <p id="ticketName">Name: </p>
+                            <p id="ticketSeat">Seat Number: </p>
+                            <p id="ticketRow">Row: </p>
+                            <p id="ticketVIP">VIP: </p>
+                        </div>
 
-                        <!-- </div> -->
-
-                        <!-- Scan Status Message -->
-                        <div id="scanStatus" class="scan-status"></div>
-
-                    </div>
-
-                    <!-- Ticket Details -->
-                    <div id="ticketDetails" class="ticket-details">
-                        <p id="ticketName">Name: </p>
-                        <p id="ticketSeat">Seat Number: </p>
-                        <p id="ticketRow">Row: </p>
-                        <p id="ticketVIP">VIP: </p>
-                    </div>
-
-                    <!-- Ticket History
+                        <!-- Ticket History
             <div id="ticketDetails" class="ticket-details">
                 <h3 class="history-title">📜 Scanning History</h3>
                 <div id="scanHistory" class="scan-history">
@@ -68,51 +72,51 @@
                 </div>
             </div> -->
 
-                    <!-- Scanner Modal (Initially Hidden) -->
-                    <div id="scannerModal" class="modal">
-                        <div class="modal-content">
-                            <span class="close">&times;</span>
-                            <h2>Scan Your Ticket</h2>
-                            <div id="scanner"></div>
-                            <p id="modalScanResult"></p>
-                        </div>
-                    </div>
-
-                    <!-- 🔹 Progress & Stats Section -->
-                    <div class="progress-card">
-                        <div class="progress-header">
-                            <!-- Left Side: Scanned Count -->
-                            <div>
-                                <div class="progress-number"
-                                    id="scannedCount">0</div>
-                                <div class="progress-label">Scanned</div>
+                        <!-- Scanner Modal (Initially Hidden) -->
+                        <div id="scannerModal" class="modal">
+                            <div class="modal-content">
+                                <span class="close">&times;</span>
+                                <h2>Scan Your Ticket</h2>
+                                <div id="scanner"></div>
+                                <p id="modalScanResult"></p>
                             </div>
+                        </div>
 
-                            <!-- Center: Progress Circle -->
-                            <div class="progress-container">
-                                <div class="progress-circle">
-                                    <div class="progress-text">0%</div>
+                        <!-- 🔹 Progress & Stats Section -->
+                        <div class="progress-card">
+                            <div class="progress-header">
+                                <!-- Left Side: Scanned Count -->
+                                <div>
+                                    <div class="progress-number"
+                                        id="scannedCount">0</div>
+                                    <div class="progress-label">Scanned</div>
+                                </div>
+
+                                <!-- Center: Progress Circle -->
+                                <div class="progress-container">
+                                    <div class="progress-circle">
+                                        <div class="progress-text">0%</div>
+                                    </div>
+                                </div>
+
+                                <!-- Right Side: Remaining Count -->
+                                <div>
+                                    <div class="progress-number"
+                                        id="remainingCount">0</div>
+                                    <div class="progress-label">Remaining</div>
                                 </div>
                             </div>
 
-                            <!-- Right Side: Remaining Count -->
-                            <div>
-                                <div class="progress-number"
-                                    id="remainingCount">0</div>
-                                <div class="progress-label">Remaining</div>
+                            <!-- 🔹 Toggle Switch (Below Progress Chart) -->
+                            <div class="toggle-container">
+                                <label class="switch">
+                                    <input type="checkbox" id="scanToggle">
+                                    <span class="slider"></span>
+                                </label>
+                                <span id="toggleLabel">Scanning In</span>
                             </div>
                         </div>
+                    </body>
 
-                        <!-- 🔹 Toggle Switch (Below Progress Chart) -->
-                        <div class="toggle-container">
-                            <label class="switch">
-                                <input type="checkbox" id="scanToggle">
-                                <span class="slider"></span>
-                            </label>
-                            <span id="toggleLabel">Scanning In</span>
-                        </div>
-                    </div>
                 </body>
-
-            </body>
-        </html>
+            </html>

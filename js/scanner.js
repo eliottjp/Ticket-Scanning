@@ -31,14 +31,8 @@ const soundError = new Audio("sounds/error.mp3");
 const soundVIP = new Audio("sounds/vip.mp3");
 
 let eventID = null;
+let tickets = {}; // Local ticket storage
 let debounceTimeout;
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker
-    .register("/sw.js")
-    .then(() => console.log("Service Worker Registered"))
-    .catch((err) => console.error("Service Worker Failed", err));
-}
 
 document.addEventListener("DOMContentLoaded", function () {
   const barcodeInput = document.getElementById("barcodeInput");
@@ -77,7 +71,31 @@ document.addEventListener("DOMContentLoaded", function () {
   registerDataWedgeListener();
 });
 
-// 🔹 Fetch latest event details from Firestore
+async function downloadTickets() {
+  if (!eventID) return;
+
+  // Check if tickets are already downloaded
+  const storedTickets = localStorage.getItem(`tickets_${eventID}`);
+  if (storedTickets) {
+    console.log("✅ Tickets already downloaded, using local storage.");
+    tickets = JSON.parse(storedTickets);
+    return;
+  }
+
+  console.log("📥 Downloading tickets...");
+  const eventRef = collection(db, eventID);
+  const snapshot = await getDocs(eventRef);
+
+  tickets = {};
+  snapshot.forEach((doc) => {
+    tickets[doc.id] = doc.data();
+  });
+
+  localStorage.setItem(`tickets_${eventID}`, JSON.stringify(tickets));
+  console.log("✅ Tickets saved locally!");
+}
+
+// 🔹 Fetch latest event details from Firestore & Store in Local Storage
 async function fetchEventID() {
   const globalRef = doc(db, "GlobalSettings", "CurrentEvent");
   const docSnap = await getDoc(globalRef);
@@ -104,6 +122,11 @@ async function fetchEventID() {
     console.log(`📅 Event Name: ${eventName}`);
     console.log(`📆 Event Date: ${eventDate}`);
 
+    // Store event details in localStorage
+    localStorage.setItem("eventID", eventID);
+    localStorage.setItem("eventName", eventName);
+    localStorage.setItem("eventDate", eventDate);
+
     // Update UI
     const eventElement = document.getElementById("currentEvent");
     if (eventElement) {
@@ -116,9 +139,26 @@ async function fetchEventID() {
   } else {
     console.log("⚠️ No active event found!");
 
-    const eventElement = document.getElementById("currentEvent");
-    if (eventElement) {
-      eventElement.innerText = "⚠️ No event uploaded.";
+    // Try to load from localStorage as a fallback
+    const storedEventID = localStorage.getItem("eventID");
+    if (storedEventID) {
+      eventID = storedEventID;
+      const storedEventName = localStorage.getItem("eventName");
+      const storedEventDate = localStorage.getItem("eventDate");
+
+      console.log("📂 Using locally stored event data.");
+      console.log(`📅 Event Name: ${storedEventName}`);
+      console.log(`📆 Event Date: ${storedEventDate}`);
+
+      const eventElement = document.getElementById("currentEvent");
+      if (eventElement) {
+        eventElement.innerHTML = `<strong>📅 ${storedEventName} | ${storedEventDate}</strong>`;
+      }
+    } else {
+      const eventElement = document.getElementById("currentEvent");
+      if (eventElement) {
+        eventElement.innerText = "⚠️ No event uploaded.";
+      }
     }
   }
 }
@@ -128,98 +168,6 @@ onSnapshot(doc(db, "GlobalSettings", "CurrentEvent"), async () => {
   console.log("🔄 Event Updated!");
   await fetchEventID();
 });
-
-// 🔹 Ticket Scanning Logic
-document
-  .getElementById("barcodeInput")
-  .addEventListener("input", async function (event) {
-    let barcode = event.target.value.trim().toLowerCase();
-    if (!barcode) return;
-
-    clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(async () => {
-      if (!eventID) {
-        showFeedback(
-          "⚠️ No Event Found. Upload first.",
-          "red",
-          soundError,
-          "scan-history-invalid"
-        );
-        return;
-      }
-
-      try {
-        let ticketsRef = collection(db, eventID);
-        let q = query(ticketsRef, where("barcode", "==", barcode));
-        let querySnapshot = await getDocs(q);
-
-        if (querySnapshot.empty) {
-          showFeedback(
-            "❌ Ticket Not Found!",
-            "red",
-            soundError,
-            "scan-history-invalid"
-          );
-          clearTicketDetails();
-        } else {
-          querySnapshot.forEach(async (docSnap) => {
-            let ticketData = docSnap.data();
-            let ticketRef = doc(db, eventID, docSnap.id);
-
-            document.getElementById(
-              "ticketName"
-            ).innerText = `Name: ${ticketData.name}`;
-            document.getElementById(
-              "ticketSeat"
-            ).innerText = `Seat Number: ${ticketData.seatNumber}`;
-            document.getElementById(
-              "ticketRow"
-            ).innerText = `Row: ${ticketData.rowNumber}`;
-            document.getElementById("ticketVIP").innerText = `VIP: ${
-              ticketData.vipGuest === "Yes" ? "✅ Yes" : "❌ No"
-            }`;
-
-            if (ticketData.checkedIn) {
-              showFeedback(
-                "⚠️ Ticket already checked in!",
-                "red",
-                soundError,
-                "scan-history-invalid"
-              );
-            } else {
-              await updateDoc(ticketRef, { checkedIn: true });
-
-              let message = `✅ ${ticketData.name}`;
-              let color = "green";
-              let sound = soundSuccess;
-              let statusClass = "scan-history-valid";
-
-              if (ticketData.vipGuest === "Yes") {
-                message += " 🎉 VIP";
-                color = "gold";
-                sound = soundVIP;
-                statusClass = "scan-history-vip";
-              }
-
-              showFeedback(message, color, sound, statusClass);
-            }
-
-            updateTicketCounts();
-          });
-        }
-      } catch (error) {
-        console.error("❌ Error scanning ticket:", error);
-        showFeedback(
-          "⚠️ Error scanning ticket.",
-          "red",
-          soundError,
-          "scan-history-invalid"
-        );
-      }
-
-      event.target.value = "";
-    }, 100);
-  });
 
 function showFeedback(message, color, sound, statusClass) {
   const scanStatus = document.getElementById("scanStatus");
@@ -244,11 +192,12 @@ function showFeedback(message, color, sound, statusClass) {
 async function updateTicketCounts() {
   if (!eventID) return;
 
-  let ticketsRef = collection(db, eventID);
-  let totalTickets = (await getDocs(ticketsRef)).size;
-  let checkedInCount = (
-    await getDocs(query(ticketsRef, where("checkedIn", "==", true)))
-  ).size;
+  let storedTickets =
+    JSON.parse(localStorage.getItem(`tickets_${eventID}`)) || [];
+  let totalTickets = storedTickets.length;
+  let checkedInCount = storedTickets.filter(
+    (ticket) => ticket.checkedIn
+  ).length;
   let remainingCount = totalTickets - checkedInCount;
 
   document.getElementById("scannedCount").innerText = checkedInCount;
@@ -305,7 +254,8 @@ toggleSwitch.addEventListener("change", () => {
   }
 });
 
-// 🔹 Modify Ticket Scanning Logic to Respect Scan Mode
+// 🔹 Modify Ticket Scanning Logic to Respect Scan Mode & Optimize with Local Storage
+
 document
   .getElementById("barcodeInput")
   .addEventListener("input", async function (event) {
@@ -325,88 +275,123 @@ document
       }
 
       try {
-        let ticketsRef = collection(db, eventID);
-        let q = query(ticketsRef, where("barcode", "==", barcode));
-        let querySnapshot = await getDocs(q);
+        // 🔍 Check localStorage first for faster lookup
+        let storedTickets =
+          JSON.parse(localStorage.getItem(`tickets_${eventID}`)) || [];
+        let ticketData = storedTickets.find(
+          (ticket) => ticket.barcode === barcode
+        );
 
-        if (querySnapshot.empty) {
-          showFeedback(
-            "❌ Ticket Not Found!",
-            "red",
-            soundError,
-            "scan-history-invalid"
-          );
-          clearTicketDetails();
-        } else {
-          querySnapshot.forEach(async (docSnap) => {
-            let ticketData = docSnap.data();
-            let ticketRef = doc(db, eventID, docSnap.id);
+        if (!ticketData) {
+          // 📡 Query Firestore only if ticket isn't in localStorage
+          let ticketsRef = collection(db, eventID);
+          let q = query(ticketsRef, where("barcode", "==", barcode));
+          let querySnapshot = await getDocs(q);
 
-            document.getElementById(
-              "ticketName"
-            ).innerText = `Name: ${ticketData.name}`;
-            document.getElementById(
-              "ticketSeat"
-            ).innerText = `Seat Number: ${ticketData.seatNumber}`;
-            document.getElementById(
-              "ticketRow"
-            ).innerText = `Row: ${ticketData.rowNumber}`;
-            document.getElementById("ticketVIP").innerText = `VIP: ${
-              ticketData.vipGuest === "Yes" ? "✅ Yes" : "❌ No"
-            }`;
+          if (querySnapshot.empty) {
+            showFeedback(
+              "❌ Ticket Not Found!",
+              "red",
+              soundError,
+              "scan-history-invalid"
+            );
+            clearTicketDetails();
+            return;
+          }
 
-            if (scanMode === "in") {
-              if (ticketData.checkedIn) {
-                showFeedback(
-                  "⚠️ Ticket already checked in!",
-                  "red",
-                  soundError,
-                  "scan-history-invalid"
-                );
-              } else {
-                await updateDoc(ticketRef, {
-                  checkedIn: true,
-                  timestamp: new Date().toISOString(), // ✅ Save scan timestamp
-                });
-
-                let message = `✅ ${ticketData.name}`;
-                let color = "green";
-                let sound = soundSuccess;
-                let statusClass = "scan-history-valid";
-
-                if (ticketData.vipGuest === "Yes") {
-                  message += " 🎉 VIP";
-                  color = "gold";
-                  sound = soundVIP;
-                  statusClass = "scan-history-vip";
-                }
-
-                showFeedback(message, color, sound, statusClass);
-              }
-            } else {
-              if (!ticketData.checkedIn) {
-                showFeedback(
-                  "⚠️ Ticket was never checked in!",
-                  "red",
-                  soundError,
-                  "scan-history-invalid"
-                );
-              } else {
-                await updateDoc(ticketRef, {
-                  checkedIn: false,
-                  timestamp: null, // ✅ Remove timestamp when checking out
-                });
-                showFeedback(
-                  `🔄 ${ticketData.name} Checked Out`,
-                  "blue",
-                  soundSuccess,
-                  "scan-history-valid"
-                );
-              }
-            }
-
-            updateTicketCounts();
+          querySnapshot.forEach((docSnap) => {
+            ticketData = docSnap.data();
+            ticketData.id = docSnap.id;
+            storedTickets.push(ticketData); // Store newly found ticket in local cache
           });
+
+          // 🏷️ Save updated tickets back to localStorage
+          localStorage.setItem(
+            `tickets_${eventID}`,
+            JSON.stringify(storedTickets)
+          );
+        }
+
+        if (ticketData) {
+          let ticketRef = doc(db, eventID, ticketData.id);
+
+          document.getElementById(
+            "ticketName"
+          ).innerText = `Name: ${ticketData.name}`;
+          document.getElementById(
+            "ticketSeat"
+          ).innerText = `Seat Number: ${ticketData.seatNumber}`;
+          document.getElementById(
+            "ticketRow"
+          ).innerText = `Row: ${ticketData.rowNumber}`;
+          document.getElementById("ticketVIP").innerText = `VIP: ${
+            ticketData.vipGuest === "Yes" ? "✅ Yes" : "❌ No"
+          }`;
+
+          if (scanMode === "in") {
+            if (ticketData.checkedIn) {
+              showFeedback(
+                "⚠️ Ticket already checked in!",
+                "red",
+                soundError,
+                "scan-history-invalid"
+              );
+            } else {
+              await updateDoc(ticketRef, {
+                checkedIn: true,
+                timestamp: new Date().toISOString(),
+              });
+
+              ticketData.checkedIn = true;
+              ticketData.timestamp = new Date().toISOString();
+
+              let message = `✅ ${ticketData.name}`;
+              let color = "green";
+              let sound = soundSuccess;
+              let statusClass = "scan-history-valid";
+
+              if (ticketData.vipGuest === "Yes") {
+                message += " 🎉 VIP";
+                color = "gold";
+                sound = soundVIP;
+                statusClass = "scan-history-vip";
+              }
+
+              showFeedback(message, color, sound, statusClass);
+            }
+          } else {
+            if (!ticketData.checkedIn) {
+              showFeedback(
+                "⚠️ Ticket was never checked in!",
+                "red",
+                soundError,
+                "scan-history-invalid"
+              );
+            } else {
+              await updateDoc(ticketRef, {
+                checkedIn: false,
+                timestamp: null,
+              });
+
+              ticketData.checkedIn = false;
+              ticketData.timestamp = null;
+
+              showFeedback(
+                `🔄 ${ticketData.name} Checked Out`,
+                "blue",
+                soundSuccess,
+                "scan-history-valid"
+              );
+            }
+          }
+
+          // 🏷️ Save updated ticket back to localStorage
+          localStorage.setItem(
+            `tickets_${eventID}`,
+            JSON.stringify(storedTickets)
+          );
+
+          updateTicketCounts();
         }
       } catch (error) {
         console.error("❌ Error scanning ticket:", error);
